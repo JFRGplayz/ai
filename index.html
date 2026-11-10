@@ -1,0 +1,175 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transformer AI</title>
+
+    <style>
+        body {
+            background: #101218;
+            color: #eee;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        #chat {
+            width: 100%;
+            max-width: 650px;
+        }
+
+        #output {
+            background: #1c202b;
+            padding: 20px;
+            min-height: 150px;
+            border-radius: 10px;
+            white-space: pre-wrap;
+            margin-bottom: 15px;
+        }
+
+        input {
+            width: 75%;
+            padding: 12px;
+            background: #252b38;
+            color: white;
+            border: 1px solid #444;
+            border-radius: 6px;
+        }
+
+        button {
+            padding: 12px;
+            background: #5865f2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+        }
+
+        #status {
+            color: #aaa;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- SECTION: HEADER -->
+    <h1>Transformer AI</h1>
+
+    <!-- SECTION: CHAT -->
+    <div id="chat">
+
+        <p id="status">Loading AI...</p>
+
+        <div id="output">
+            Your AI response will appear here.
+        </div>
+
+        <input
+            id="prompt"
+            type="text"
+            placeholder="Talk to the AI..."
+        >
+
+        <button id="send" disabled>
+            Send
+        </button>
+
+    </div>
+
+    <!-- SECTION: AI ENGINE -->
+    <script type="module">
+
+        import { pipeline } from
+            'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2';
+
+        // AI STATE
+        let generator = null;
+
+        const status = document.getElementById('status');
+        const output = document.getElementById('output');
+        const prompt = document.getElementById('prompt');
+        const send = document.getElementById('send');
+
+        // INITIALISE MODEL
+        async function initialiseAI() {
+
+            try {
+
+                status.textContent = 'Downloading AI model...';
+
+                generator = await pipeline(
+                    'text-generation',
+                    'Xenova/distilgpt2'
+                );
+
+                status.textContent = 'AI ready!';
+                send.disabled = false;
+
+            } catch (error) {
+
+                status.textContent = 'AI failed to initialise.';
+                console.error(error);
+
+            }
+
+        }
+
+        // GENERATE RESPONSE
+        async function generateResponse() {
+
+            const input = prompt.value.trim();
+
+            if (!input || !generator) return;
+
+            send.disabled = true;
+            output.textContent = 'Thinking...';
+
+            try {
+
+                const result = await generator(input, {
+                    max_new_tokens: 80,
+                    do_sample: true,
+                    temperature: 0.8,
+                    top_k: 50
+                });
+
+                output.textContent =
+                    result[0].generated_text;
+
+            } catch (error) {
+
+                output.textContent = 'Generation failed.';
+                console.error(error);
+
+            }
+
+            send.disabled = false;
+
+        }
+
+        // EVENT LISTENERS
+        send.addEventListener('click', generateResponse);
+
+        prompt.addEventListener('keydown', event => {
+            if (event.key === 'Enter') {
+                generateResponse();
+            }
+        });
+
+        // START AI
+        initialiseAI();
+
+    </script>
+
+</body>
+</html>
